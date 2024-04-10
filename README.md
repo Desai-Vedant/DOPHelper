@@ -1,5 +1,6 @@
 # DOPHelper Application
 This is an python based GUI app for India Post MPKBY agents. This app allows Post agents to perform RD Lists in one click. This app is based on python pyqt5 and selenium webdriver to automate the process.
+![DOPHelper Applicaion](DOPHelperSS.png)
 
 ## Introduction
 DOPHelper is a PyQt5-based GUI application designed to assist MPKBY (Monthly Public Key-based Investment Scheme) agents in automating various tasks related to lot creation process. The application requires Firefox preinstalled on your PC as it utilizes Selenium WebDriver for web automation. Additionally, it integrates OCRSpace API for captcha prediction.
