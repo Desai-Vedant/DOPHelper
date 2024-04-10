@@ -1,5 +1,6 @@
 # DOPHelper Application
 This is an python based GUI app for India Post MPKBY agents. This app allows Post agents to perform RD Lists in one click. This app is based on python pyqt5 and selenium webdriver to automate the process.
+
 ![DOPHelper Applicaion](DOPHelperSS.png)
 
 ## Introduction
@@ -60,5 +61,5 @@ DOPHelper/
 ## Support
 For any inquiries, suggestions, or issues, feel free to contact the developer.
 
-## License
-This project is licensed under the [MIT License](LICENSE).
+## Contributing
+Contributions to AIDesk are welcome! If you have ideas for improvements or new features, please submit a pull request or open an issue on the GitHub repository.
