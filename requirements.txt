@@ -1,0 +1,6 @@
+PyQt5==5.15.10
+pandas==2.2.1
+pillow==10.2.0
+openpyxl==3.1.2
+selenium==4.19.0
+pytesseract==0.3.10
