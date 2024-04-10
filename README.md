@@ -26,7 +26,7 @@ Before using DOPHelper, ensure you have the following installed:
 ## Installation
 1. Clone the repository or download the source code.
 2. Install the required dependencies using pip:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 3. Ensure Firefox is installed on your system.
@@ -40,7 +40,7 @@ Before using DOPHelper, ensure you have the following installed:
 5. Report any issues or bugs encountered during usage to the developer.
 
 ## Directory Structure
-```
+```bash
 DOPHelper/
 │
 ├── DOPHelper.py        # Main GUI file
