@@ -4,3 +4,4 @@ pillow==10.2.0
 openpyxl==3.1.2
 selenium==4.19.0
 pytesseract==0.3.10
+XlsxWriter==3.2.0
