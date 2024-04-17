@@ -1236,7 +1236,7 @@ class AboutPage(QWidget):
         # Add widgets and layout for AboutPage
         layout = QVBoxLayout()
         layout.addStretch()
-        layout.addWidget(QLabel("V2024-03"), alignment = Qt.AlignCenter)
+        layout.addWidget(QLabel("v2024.04.01"), alignment = Qt.AlignCenter)
         layout.addStretch()
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
