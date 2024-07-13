@@ -150,12 +150,11 @@ class DOPDatabaseAssistant:
                 'ac_id': int
             })
 
-            columns = ['ac_id', 'ac_no', 'acc_holder_name', 'denomination', 'no_of_installments']
-            # Select columns using their names in a list:
+            #Change isActive column info for user Convienence
             all_accounts = db
-            all_accounts.loc[:,'is_active'] = all_accounts.loc[:,'is_active'].astype(str)
-            all_accounts.loc[all_accounts.loc[:,'is_active']=='1', 'is_active'] = "Active"
-            all_accounts.loc[all_accounts.loc[:,'is_active']=='0', 'is_active'] = "Closed"
+            all_accounts['is_active'] = all_accounts['is_active'].astype(str)
+            all_accounts.loc[(all_accounts.loc[:,'is_active']).astype(str)=='1', 'is_active'] = "Active"
+            all_accounts.loc[(all_accounts.loc[:,'is_active']).astype(str)=='0', 'is_active'] = "Closed"
 
             return all_accounts
 
