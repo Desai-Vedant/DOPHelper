@@ -1,10 +1,10 @@
 # DOPHelper Application
-This is an python based GUI app for India Post MPKBY agents. This app allows Post agents to perform RD Lists in one click. This app is based on python pyqt5 and selenium webdriver to automate the process.
+This is an python based GUI app for India Post MPKBY agents. This app allows Post agents to perform RD Lists in one click. This app is based on python PySide6 and selenium webdriver to automate the process.
 
 ![DOPHelper Applicaion](DOPHelperSS.png)
 
 ## Introduction
-DOPHelper is a PyQt5-based GUI application designed to assist MPKBY (Monthly Public Key-based Investment Scheme) agents in automating various tasks related to lot creation process. The application requires Firefox preinstalled on your PC as it utilizes Selenium WebDriver for web automation. Additionally, it integrates OCRSpace API for captcha prediction.
+DOPHelper is a PySide6-based GUI application designed to assist MPKBY (Monthly Public Key-based Investment Scheme) agents in automating various tasks related to lot creation process. The application requires a Browser from thses three [Firefox(Recommended), Chrome, Edge] preinstalled on your PC as it utilizes Selenium WebDriver for web automation. Additionally, it integrates OCRSpace API for captcha prediction.
 
 ## Features
 - Automates lot creation process for MPKBY agents.
@@ -19,7 +19,7 @@ DOPHelper is a PyQt5-based GUI application designed to assist MPKBY (Monthly Pub
 ## Prerequisites
 Before using DOPHelper, ensure you have the following installed:
 - Python
-- PyQt5
+- PySide6
 - Firefox browser
 - Selenium WebDriver
 - OCRSpace API credentials
@@ -59,7 +59,7 @@ DOPHelper/
 ```
 
 ## Support
-For any inquiries, suggestions, or issues, feel free to contact the developer.
+For any inquiries, suggestions, or issues, feel free to contact us.
 
 ## Contributing
-Contributions to AIDesk are welcome! If you have ideas for improvements or new features, please submit a pull request or open an issue on the GitHub repository.
+Contributions to DOPHelper are welcome! If you have ideas for improvements or new features, please submit a pull request or open an issue on the GitHub repository.
