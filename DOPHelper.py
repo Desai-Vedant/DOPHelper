@@ -1,20 +1,32 @@
 import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QIcon
+import os
+import re
+import json
+import tempfile
+import webbrowser
+from datetime import datetime
+
 import pandas as pd
+from openpyxl import load_workbook
+
+from PySide6.QtWidgets import (
+    QApplication, QFileDialog, QWidget, QVBoxLayout, QDialog, QHBoxLayout,
+    QComboBox, QLabel, QLineEdit, QLayout, QPushButton, QTableWidgetItem, 
+    QAbstractItemView, QHeaderView, QTableWidget, QMessageBox, QFrame, QMainWindow,
+    QStackedWidget, QCheckBox, QTextEdit
+)
+from PySide6.QtCore import (
+    Qt, Signal, QThread
+)
+from PySide6.QtGui import QIcon
+
 from dopdatabaseassistant import DOPDatabaseAssistant
 from dopwebassistant import DOPWebAssistant
 from dopfileassistant import DOPFileAssistant
-from openpyxl import load_workbook
-from PyQt5.QtWidgets import QFileDialog, QApplication
-import os
-from datetime import datetime
-import json
-from PyQt5.QtWidgets import QApplication
-import re
-import tempfile
-import webbrowser
+
+from qt_material import apply_stylesheet  # Ensure this is imported after PySide6
+
+
 
 
 # BASE UI CLASS
@@ -22,7 +34,14 @@ class RDApplication(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon('./_internal/static/icon.png'))
+        self.setWindowIcon(QIcon('./_internal/static/icon.svg'))
+        # Get the screen geometry
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
+        
+        # Set the window size to the screen's width and height
+        self.resize(screen_geometry.width(), screen_geometry.height())
+
         self.user_id = "USERID"
         self.user_password = "PASSWORD"
         self.def_download_dir = "./"
@@ -32,6 +51,9 @@ class RDApplication(QMainWindow):
         self.agent_name = 'AGENTNAME'
         self.agent_husband_name = 'AGENTHUSBANDNAME'
         self.ocr_apikey = "APIKEY"
+        self.theme = "Dark"
+        self.ascent = "amber"
+        self.scale = "0"
         self.initialize_settings_json()
         self.load_settings()
         self.initialize_assistants()
@@ -53,6 +75,7 @@ class RDApplication(QMainWindow):
         # Setting up Central Widget
         self.central_widget = QWidget()
         self.central_widget.setObjectName("centralWidget")  # Set the object name for CSS targeting
+        self.central_widget.setContentsMargins(0,0,0,0)
         self.setCentralWidget(self.central_widget)
 
         # Create a frame for the sidebar
@@ -61,22 +84,26 @@ class RDApplication(QMainWindow):
 
         # Button Layout for Holding Buttons with 10px side spacing
         self.sidebar_buttons_layout = QVBoxLayout()
-        self.sidebar_buttons_layout.setContentsMargins(15, 15, 15, 15)
+        self.sidebar_buttons_layout.setContentsMargins(10,10,10,10)
 
         # QStack Widget to hold Pages
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setObjectName("stackedWidget")  # Set the object name for CSS targeting
+        self.stacked_widget.setContentsMargins(0,0,0,0)
+
 
         # Layout for Sidebar which is placed in sidebar frame and holds buttons layout
         self.sidebar_layout = QVBoxLayout(self.sidebar_frame)
         self.sidebar_layout.setAlignment(Qt.AlignTop)  # Align the buttons to the top
         self.sidebar_layout.addLayout(self.sidebar_buttons_layout)
-        self.sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        self.sidebar_layout.setContentsMargins(0,0,0,0)
 
         # Creating Layout for central widget
         self.main_layout = QHBoxLayout()
+        self.main_layout.setSpacing(0)
         self.main_layout.addWidget(self.sidebar_frame, 1)
         self.main_layout.addWidget(self.stacked_widget, 4)
-        self.main_layout.setContentsMargins(20, 20, 20, 20)
+        self.main_layout.setContentsMargins(5,5,5,5)
 
         # Load and create all pages
         self.pages = [
@@ -96,13 +123,30 @@ class RDApplication(QMainWindow):
         # Setting up layout for central widget
         self.central_widget.setLayout(self.main_layout)
 
+        # Create and add the appearance button to open AppearanceWindow
+        appearance_button = QPushButton("Appearance")
+        appearance_button.clicked.connect(self.open_appearance_window)
+        appearance_button.setIcon(QIcon("./_internal/static/appearance.svg"))
+        self.sidebar_buttons_layout.addWidget(appearance_button)
+        self.appearance_window = AppearanceWindow(self)
+
+    # Open Appearance Window
+    def open_appearance_window(self):
+        self.appearance_window.show()
+
+    # Close Appearance window on closing main window
+    def closeEvent(self, event):
+        if self.appearance_window is not None:
+            self.appearance_window.close()
+        event.accept()
+
     # Reguler popup message for info
     def show_popup_message(self, title, message, icon=QMessageBox.Information):
         msg_box = QMessageBox(self)
         msg_box.setIcon(icon)
         msg_box.setWindowTitle(title)
         msg_box.setText(message)
-        msg_box.exec_()
+        msg_box.exec()
 
     # Popup Message for error
     def show_error_message(self, title, message):
@@ -119,7 +163,10 @@ class RDApplication(QMainWindow):
             'agent_address': "ADDRESS",
             'agent_name': "AGENTNAME",
             'agent_husband_name': "AGENTHUSBANDNAME",
-            'ocr_apikey':"APIKEY"
+            'ocr_apikey':"APIKEY",
+            "theme": "Dark",
+            "ascent": "blue",
+            "scale": "0"
         }
 
         try:
@@ -139,7 +186,10 @@ class RDApplication(QMainWindow):
             'agent_address': self.agent_address,
             'agent_name': self.agent_name,
             'agent_husband_name': self.agent_husband_name,
-            'ocr_apikey' : self.ocr_apikey
+            'ocr_apikey' : self.ocr_apikey,
+            "theme": self.theme,
+            "ascent": self.ascent,
+            "scale": self.scale
         }
 
         with open(filename, 'w') as file:
@@ -160,6 +210,9 @@ class RDApplication(QMainWindow):
             self.agent_name = settings_data.get('agent_name', '')
             self.agent_husband_name = settings_data.get('agent_husband_name', '')
             self.ocr_apikey = settings_data.get('ocr_apikey','')
+            self.theme = settings_data.get('theme','')
+            self.ascent = settings_data.get('ascent','')
+            self.scale = settings_data.get('scale','')
         except FileNotFoundError:
             # Handle the case where the file is not found (e.g., first-time setup)
             pass
@@ -180,8 +233,8 @@ class RDApplication(QMainWindow):
 
 # DOWNLOAD REPORT THREAD
 class DownloadReportThread(QThread):
-    finished_signal = pyqtSignal(str)
-    finished_with_error = pyqtSignal(str)
+    finished_signal = Signal(str)
+    finished_with_error = Signal(str)
 
     def __init__(self, parent, lot_reference):
         super().__init__()
@@ -205,8 +258,8 @@ class DownloadReportThread(QThread):
 
 # ASLAAS UPDATE THREAD
 class AslaasUpdateThread(QThread):
-    finished_signal = pyqtSignal()
-    finished_with_error = pyqtSignal(str)
+    finished_signal = Signal()
+    finished_with_error = Signal(str)
 
     def __init__(self, parent, acc_nos, aslaas_nos, acc_ids):
         super().__init__()
@@ -231,8 +284,8 @@ class AslaasUpdateThread(QThread):
 
 # SYNC ACCOUNTS THREAD
 class SyncAccountsThread(QThread):
-    finished_signal = pyqtSignal()
-    finished_with_error = pyqtSignal(str)
+    finished_signal = Signal()
+    finished_with_error = Signal(str)
 
     def __init__(self, parent):
         super().__init__()
@@ -254,8 +307,8 @@ class SyncAccountsThread(QThread):
 
 # PERFORM LOT THREAD
 class PerformLotThread(QThread):
-    finished_signal = pyqtSignal(str)
-    finished_with_error = pyqtSignal(str)
+    finished_signal = Signal(str)
+    finished_with_error = Signal(str)
 
     def __init__(self, parent, acc_nos, acc_ins, reports_path):
         super().__init__()
@@ -294,7 +347,7 @@ class DashboardPage(QWidget):
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
 
-        self.parent.create_sidebar_button("Dashboard", 0, './_internal/static/dashboard.png')
+        self.parent.create_sidebar_button("Dashboard", 0, './_internal/static/dashboard.svg')
 
 
 # Get Account Numbers and Declaration
@@ -342,7 +395,7 @@ class WorkspacePage(QWidget):
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
 
-        self.parent.create_sidebar_button("Workspace", 1, "./_internal/static/workspace.png")
+        self.parent.create_sidebar_button("Workspace", 1, "./_internal/static/workspace.svg")
 
     def get_account_numbers(self):
         try:
@@ -422,7 +475,7 @@ class WorkspacePage(QWidget):
         # Create a pop-up window to display the client details
         popup = QDialog(self)
         popup.setWindowTitle("Client Details")
-        popup.setGeometry(200, 200, 1000, 800)
+        popup.setGeometry(200, 200, 650, 350)
         popup.setStyleSheet(self.parent.styleSheet())  # Use the same stylesheet as the main window
 
         layout = QVBoxLayout()
@@ -433,7 +486,7 @@ class WorkspacePage(QWidget):
         table_widget.setRowCount(len(df))
 
         # Set the column names
-        column_names = ["Sr. No", "Account Number", "Account Id", "Account Holder Name", "Total Amount", "Account Opening Date","No of Installments"]
+        column_names = ["No", "Acc. No", "Acc. Id", "Name", "Amount", "Open Date","Installments"]
         table_widget.setHorizontalHeaderLabels(column_names)
 
         for row in range(len(df)):
@@ -455,7 +508,7 @@ class WorkspacePage(QWidget):
         layout.addWidget(table_widget)
 
         popup.setLayout(layout)
-        popup.exec_()
+        popup.exec()
 
     def perform_lot(self):
         try:
@@ -568,7 +621,8 @@ class ViewAccountsPage(QWidget):
         # Create widgets for ViewClientsPage
         self.client_table_widget = QTableWidget()
         self.client_table_widget.setColumnCount(8)
-        self.client_table_widget.setHorizontalHeaderLabels(["Client ID", "RD Account Number", "Name", "Deposit Amount", "Months Paid","Opening Date","Account Status","Aslaas No."])
+        # Column Names : ["Client ID", "RD Account Number", "Name", "Deposit Amount", "Months Paid","Opening Date","Account Status","Aslaas No."]
+        self.client_table_widget.setHorizontalHeaderLabels(["ID", "Acc. No.", "Name", "Deposit", "Months","Opening Date","Status","Aslaas"])
 
         # Adjust the column widths and set stretch factors for the "View Clients" page table
         self.client_table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -605,7 +659,7 @@ class ViewAccountsPage(QWidget):
         self.client_table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.client_table_widget.verticalHeader().setVisible(False)
 
-        self.parent.create_sidebar_button("View Accounts", 2, './_internal/static/viewaccounts.png')
+        self.parent.create_sidebar_button("View Accounts", 2, './_internal/static/viewaccounts.svg')
 
     def add_client_to_table(self, client_id, rd_account_number, name, denomination, installments, date, is_active, aslaas_no):
         # Add the client to the table on the View Clients page
@@ -683,7 +737,7 @@ class AslaasUpdatePage(QWidget):
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
 
-        self.parent.create_sidebar_button("Update Aslaas Numbers", 3, "./_internal/static/update.png")
+        self.parent.create_sidebar_button("Update Aslaas Numbers", 3, "./_internal/static/update.svg")
 
     def get_update_details(self):
         try:
@@ -781,7 +835,7 @@ class DownloadReportPage(QWidget):
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
 
-        self.parent.create_sidebar_button("Download Report", 4, "./_internal/static/download.png")
+        self.parent.create_sidebar_button("Download Report", 4, "./_internal/static/download.svg")
 
     def download_report(self):
         try:
@@ -903,12 +957,12 @@ class SettingsPage(QWidget):
 
         # Sync Accounts
         self.sync_accounts_button = QPushButton("  Sync Accounts")
-        self.sync_accounts_button.setIcon(QIcon("./_internal/static/sync.png"))
+        self.sync_accounts_button.setIcon(QIcon("./_internal/static/sync.svg"))
         self.sync_accounts_button.clicked.connect(self.sync_accounts)
 
         # Sync Aslaas
         self.sync_aslaas_button = QPushButton("  Sync Aslaas")
-        self.sync_aslaas_button.setIcon(QIcon("./_internal/static/sync.png"))
+        self.sync_aslaas_button.setIcon(QIcon("./_internal/static/sync.svg"))
         self.sync_aslaas_button.clicked.connect(self.sync_aslaas)
 
         # Agent Name
@@ -1048,7 +1102,7 @@ class SettingsPage(QWidget):
         self.parent.stacked_widget.addWidget(self)
 
         #self.parent.load_settings()
-        self.parent.create_sidebar_button("Settings", 5, "./_internal/static/settings.png")
+        self.parent.create_sidebar_button("Settings", 5, "./_internal/static/settings.svg")
 
 
 
@@ -1186,7 +1240,7 @@ class SettingsPage(QWidget):
         self.ocr_apikey_edit_button.setText("Edit" if not self.ocr_apikey_edit_mode else "Save")
 
     def toggle_password_visibility(self, state):
-        if state == Qt.Checked:
+        if state == 2:
             self.password_edit.setEchoMode(QLineEdit.Normal)
         else:
             self.password_edit.setEchoMode(QLineEdit.Password)
@@ -1236,23 +1290,101 @@ class AboutPage(QWidget):
         # Add widgets and layout for AboutPage
         layout = QVBoxLayout()
         layout.addStretch()
-        layout.addWidget(QLabel("v2024.04.01"), alignment = Qt.AlignCenter)
+        layout.addWidget(QLabel("v2024.07.01"), alignment = Qt.AlignCenter)
         layout.addStretch()
         self.setLayout(layout)
         self.parent.stacked_widget.addWidget(self)
 
-        self.parent.create_sidebar_button("About", 6, "./_internal/static/about.png")
+        self.parent.create_sidebar_button("About", 6, "./_internal/static/about.svg")
+
+
+# Appearance Page
+class AppearancePage(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.init_ui()
+        self.update_theme()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        # Theme selection
+        theme_label = QLabel("Theme:")
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Light", "Dark"])
+        self.theme_combo.setCurrentText(self.parent.theme.capitalize())
+        self.theme_combo.currentIndexChanged.connect(self.update_theme)
+
+        theme_layout = QHBoxLayout()
+        theme_layout.addWidget(theme_label)
+        theme_layout.addWidget(self.theme_combo)
+
+        layout.addLayout(theme_layout)
+
+        # Color selection with dropdown
+        color_dropdown_label = QLabel("Accent Color:")
+        self.color_combo = QComboBox()
+        self.color_options = ['amber', 'blue', 'cyan', 'lightgreen', 'pink', 'purple', 'red', 'teal', 'yellow']
+        for color in self.color_options:
+            self.color_combo.addItem(color)
+        self.color_combo.setCurrentText(self.parent.ascent)
+        self.color_combo.currentIndexChanged.connect(self.update_theme)
+
+        color_dropdown_layout = QHBoxLayout()
+        color_dropdown_layout.addWidget(color_dropdown_label)
+        color_dropdown_layout.addWidget(self.color_combo)
+
+        layout.addLayout(color_dropdown_layout)
+
+        # Scale selection
+        scale_label = QLabel("Scale:")
+        self.scale_combo = QComboBox()
+        self.scale_options = [str(i) for i in range(-4, 3)]
+        for scale in self.scale_options:
+            self.scale_combo.addItem(scale)
+        self.scale_combo.setCurrentText(str(self.parent.scale))
+        self.scale_combo.currentIndexChanged.connect(self.update_theme)
+
+        scale_layout = QHBoxLayout()
+        scale_layout.addWidget(scale_label)
+        scale_layout.addWidget(self.scale_combo)
+
+        layout.addLayout(scale_layout)
+
+        layout.addStretch()
+        self.setLayout(layout)
+
+    def update_theme(self):
+        self.parent.theme = self.theme_combo.currentText().lower()
+        self.parent.ascent = self.color_combo.currentText()
+        self.parent.scale = int(self.scale_combo.currentText())  # Convert to integer
+        extra = {
+            'density_scale': self.parent.scale,
+        }
+        apply_stylesheet(app, theme=f"{self.parent.theme}_{self.parent.ascent}.xml", extra=extra, css_file='./_internal/static/styles.qss')
+        self.parent.save_settings()
+
+
+# Appearance Window as popup
+class AppearanceWindow(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("Appearance Settings")
+        self.parent = parent
+        self.appearance_page = AppearancePage(self.parent)
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.appearance_page)
+        self.resize(400, 300)
+
+        def closeEvent(self, event):
+            self.parent.appearance_window = None
+            event.accept()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = RDApplication()
-    app.setStyle("Fusion")
-
-    try:
-        app.setStyleSheet(open("./_internal/static/styles.qss").read())
-    except:
-        pass
 
     window.showMaximized()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
