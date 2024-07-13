@@ -1,10 +1,12 @@
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill
+import os
+import logging
+from datetime import datetime
+
 import pandas as pd
 import numpy as np
-import os
-from datetime import datetime
-import logging
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+
 
 # Configure the logging settings
 logging.basicConfig(filename='doplogs.log' ,level=20, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -66,7 +68,7 @@ class DOPFileAssistant:
     def extract_xlsx_file(self,file_path):
         try:
             # Read the Excel file
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(file_path, engine='xlrd')
             logging.info("xls file read Sucessful !")
 
             # Set columns to range of shape
