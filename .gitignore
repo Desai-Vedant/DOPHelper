@@ -1,0 +1,7 @@
+.conda/
+doplogs.log
+settings.json
+Database/
+__pycache__/
+RDRecord/
+temp/
